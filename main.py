@@ -8,13 +8,18 @@ SERVICE_UUID = uuid.UUID('{B3C60426-15C1-45C8-BFC0-A129094D994D}')
 
 def main():
     # Get the first available Bluetooth adapter
-    dongle = list(adapter.Adapter.available())[0]
+    bt_adapters = adapter.Adapter.available()
+    if not bt_adapters:
+        print("No Bluetooth adapter found")
+        return
     
-    # Create an advertisement manager
+    dongle = bt_adapters[0]
+    
+    # Create an advertisement manager using the adapter's path
     advert_mgr = advertisement.AdvertisingManager(dongle.path)
     
     # Create an advertisement
-    adv = advertisement.Advertisement('/org/bluez/hci0', 0, 'peripheral')
+    adv = advertisement.Advertisement(dongle.path, 0, 'peripheral')
     
     # Set advertisement properties
     adv.service_uuids = [str(SERVICE_UUID)]
@@ -26,6 +31,7 @@ def main():
     
     # Start advertising
     print(f"Starting advertisement with service UUID: {SERVICE_UUID}")
+    print(f"Using adapter: {dongle.address}")
     print("Press Ctrl+C to stop")
     
     try:
