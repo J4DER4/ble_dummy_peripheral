@@ -7,7 +7,7 @@ SERVICE_UUID = 'B3C60426-15C1-45C8-BFC0-A129094D994D'
 
 def main():
     # Get the first available Bluetooth adapter
-    bt_adapters = adapter.Adapter.available()
+    bt_adapters = list(adapter.Adapter.available())
     if not bt_adapters:
         print("No Bluetooth adapter found")
         return
