@@ -10,16 +10,19 @@ def main():
     # Get the first available Bluetooth adapter
     dongle = list(adapter.Adapter.available())[0]
     
+    # Create an advertisement manager
+    advert_mgr = advertisement.AdvertisingManager(dongle.path)
+    
     # Create an advertisement
-    adv = advertisement.Advertisement(1, 'peripheral')
+    adv = advertisement.Advertisement('/org/bluez/hci0', 0, 'peripheral')
     
     # Set advertisement properties
-    adv.service_UUIDs = [str(SERVICE_UUID)]
+    adv.service_uuids = [str(SERVICE_UUID)]
     adv.local_name = "DummyDevice"
     adv.include_tx_power = True
     
-    # Register the advertisement with the adapter
-    adv.register(dongle.address)
+    # Register the advertisement
+    advert_mgr.register_advertisement(adv, {})
     
     # Start advertising
     print(f"Starting advertisement with service UUID: {SERVICE_UUID}")
@@ -29,7 +32,7 @@ def main():
         tools.start_mainloop()
     except KeyboardInterrupt:
         print("\nStopping advertisement")
-        adv.unregister()
+        advert_mgr.unregister_advertisement(adv)
 
 if __name__ == '__main__':
     main()
