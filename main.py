@@ -25,7 +25,7 @@ from bluezero import peripheral
 # https://github.com/oesmith/gatt-xml/blob/master/org.bluetooth.characteristic.heart_rate_control_point.xml
 
 
-HRM_SRV = '0000180D-0000-1000-8000-00805f9b34fb'
+HRM_SRV = 'B3C60426-15C1-45C8-BFC0-A129094D994D'
 HR_MSRMT_UUID = '00002a37-0000-1000-8000-00805f9b34fb'
 BODY_SNSR_LOC_UUID = '00002a38-0000-1000-8000-00805f9b34fb'
 HR_CTRL_PT_UUID = '00002a39-0000-1000-8000-00805f9b34fb'
