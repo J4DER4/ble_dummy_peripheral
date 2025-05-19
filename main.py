@@ -165,7 +165,7 @@ def main(adapter_address):
 
     # Add characteristics
     hr_monitor.add_characteristic(srv_id=1, chr_id=1, uuid=custom_charasteristic,
-                                  value=[], notifying=True,
+                                  value=[], notifying=False,
                                   # May not exactly match standard, but
                                   # including read for tutorial
                                   flags=['read', 'notify'],
