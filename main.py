@@ -194,6 +194,12 @@ def main(adapter_address):
     # Publish peripheral and start event loop
     hr_monitor.publish()
 
+    import time
+    while True:
+    # Example: Send a heart rate value (format: [flags, value])
+    hr_monitor.notify_characteristic(srv_id=1, chr_id=1, value=[0x06, 0x45])  # 69 BPM
+    time.sleep(1)  # Send every second
+
 
 if __name__ == '__main__':
     # Get the default adapter address and pass it to main
