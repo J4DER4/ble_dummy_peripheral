@@ -123,6 +123,7 @@ def notify_callback(notifying, characteristic):
     :param notifying: boolean for start or stop of notifications
     :param characteristic: The python object for this characteristic
     """
+    print("hello from notify")
     if notifying:
         async_tools.add_timer_seconds(1, update_value, characteristic)
 
@@ -162,7 +163,7 @@ def main(adapter_address):
 
     # Add characteristics
     hr_monitor.add_characteristic(srv_id=1, chr_id=1, uuid=custom_charasteristic,
-                                  value=[], notifying=False,
+                                  value=[], notifying=True,
                                   # May not exactly match standard, but
                                   # including read for tutorial
                                   flags=['read', 'notify'],
@@ -171,22 +172,6 @@ def main(adapter_address):
                                   notify_callback=notify_callback
                                   )
 
-   """
-   hr_monitor.add_characteristic(srv_id=1, chr_id=2, uuid=BODY_SNSR_LOC_UUID,
-                                  value=[], notifying=False,
-                                  flags=['read'],
-                                  read_callback=read_sensor_location,
-                                  write_callback=None,
-                                  notify_callback=None
-                                  )
-
-    hr_monitor.add_characteristic(srv_id=1, chr_id=3, uuid=HR_CTRL_PT_UUID,
-                                  value=[], notifying=False,
-                                  flags=['write'],
-                                  read_callback=None,
-                                  write_callback=write_control_point,
-                                  notify_callback=None
-                                  ) """
 
     # Publish peripheral and start event loop
     hr_monitor.publish()
