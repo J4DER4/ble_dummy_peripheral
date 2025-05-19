@@ -202,6 +202,7 @@ def main(adapter_address):
         while True:
             print("sanity check\n")
             print(heartrate)
+            time.sleep(1)
     except KeyboardInterrupt:
         hr_monitor.stop()
 
