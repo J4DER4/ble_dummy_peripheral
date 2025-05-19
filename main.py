@@ -171,7 +171,8 @@ def main(adapter_address):
                                   notify_callback=notify_callback
                                   )
 
-   """  hr_monitor.add_characteristic(srv_id=1, chr_id=2, uuid=BODY_SNSR_LOC_UUID,
+   """
+   hr_monitor.add_characteristic(srv_id=1, chr_id=2, uuid=BODY_SNSR_LOC_UUID,
                                   value=[], notifying=False,
                                   flags=['read'],
                                   read_callback=read_sensor_location,
