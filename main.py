@@ -30,7 +30,8 @@ HR_MSRMT_UUID = '00002a37-0000-1000-8000-00805f9b34fb'
 BODY_SNSR_LOC_UUID = '00002a38-0000-1000-8000-00805f9b34fb'
 HR_CTRL_PT_UUID = '00002a39-0000-1000-8000-00805f9b34fb'
 
-
+custom_service = '398629c8-4757-4e72-9b0d-8ebdd6ac82a2'
+custom_charasteristic = '094bd4ad-3605-4912-b9d3-a6b91c573137'
 class HeartRateMeasurementFlags(IntEnum):
     HEART_RATE_VALUE_FORMAT_UINT16 = 0b00000001
     SENSOR_CONTACT_DETECTED = 0b00000010
@@ -154,13 +155,13 @@ def main(adapter_address):
 
     # Create peripheral
     hr_monitor = peripheral.Peripheral(adapter_address,
-                                       local_name='Heartrate Monitor',
-                                       appearance=0x0340)
+                                       local_name='superpaahdin3000',
+                                       appearance=0x0905)
     # Add service
-    hr_monitor.add_service(srv_id=1, uuid=HRM_SRV, primary=True)
+    hr_monitor.add_service(srv_id=1, uuid=custom_service, primary=True)
 
     # Add characteristics
-    hr_monitor.add_characteristic(srv_id=1, chr_id=1, uuid=HR_MSRMT_UUID,
+    hr_monitor.add_characteristic(srv_id=1, chr_id=1, uuid=custom_charasteristic,
                                   value=[], notifying=False,
                                   # May not exactly match standard, but
                                   # including read for tutorial
@@ -170,7 +171,7 @@ def main(adapter_address):
                                   notify_callback=notify_callback
                                   )
 
-    hr_monitor.add_characteristic(srv_id=1, chr_id=2, uuid=BODY_SNSR_LOC_UUID,
+   """  hr_monitor.add_characteristic(srv_id=1, chr_id=2, uuid=BODY_SNSR_LOC_UUID,
                                   value=[], notifying=False,
                                   flags=['read'],
                                   read_callback=read_sensor_location,
@@ -184,7 +185,7 @@ def main(adapter_address):
                                   read_callback=None,
                                   write_callback=write_control_point,
                                   notify_callback=None
-                                  )
+                                  ) """
 
     # Publish peripheral and start event loop
     hr_monitor.publish()
