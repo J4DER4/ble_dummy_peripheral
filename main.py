@@ -106,8 +106,10 @@ def update_value(characteristic):
     :param characteristic:
     :return: boolean to indicate if timer should continue
     """
-    # read/calculate new value.
-    new_value = read_heartrate()
+    # read/calculate new value
+    print("updating value")
+    new_value = heartrate + 1
+    heartrate = new_value
     # Causes characteristic to be updated and send notification
     characteristic.set_value(new_value)
     # Return True to continue notifying. Return a False will stop notifications
@@ -123,7 +125,7 @@ def notify_callback(notifying, characteristic):
     :param notifying: boolean for start or stop of notifications
     :param characteristic: The python object for this characteristic
     """
-    print("hello from notify")
+    print("hello from notify cb")
     if notifying:
         async_tools.add_timer_seconds(1, update_value, characteristic)
 
@@ -171,7 +173,23 @@ def main(adapter_address):
                                   write_callback=None,
                                   notify_callback=notify_callback
                                   )
+    """
+    
+    hr_monitor.add_characteristic(srv_id=1, chr_id=2, uuid=BODY_SNSR_LOC_UUID,
+                                  value=[], notifying=False,
+                                  flags=['read'],
+                                  read_callback=read_sensor_location,
+                                  write_callback=None,
+                                  notify_callback=None
+                                  )
 
+    hr_monitor.add_characteristic(srv_id=1, chr_id=3, uuid=HR_CTRL_PT_UUID,
+                                  value=[], notifying=False,
+                                  flags=['write'],
+                                  read_callback=None,
+                                  write_callback=write_control_point,
+                                  notify_callback=None
+                                  ) """
 
     # Publish peripheral and start event loop
     hr_monitor.publish()
