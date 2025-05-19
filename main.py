@@ -126,8 +126,11 @@ def notify_callback(notifying, characteristic):
     :param characteristic: The python object for this characteristic
     """
     print("hello from notify cb")
+    print("notifications set")
+    
     if notifying:
         async_tools.add_timer_seconds(1, update_value, characteristic)
+    return True
 
 
 def write_control_point(value, options):
@@ -165,7 +168,7 @@ def main(adapter_address):
 
     # Add characteristics
     hr_monitor.add_characteristic(srv_id=1, chr_id=1, uuid=custom_charasteristic,
-                                  value=[], notifying=False,
+                                  value=[], notifying=True,
                                   # May not exactly match standard, but
                                   # including read for tutorial
                                   flags=['read', 'notify'],
@@ -195,11 +198,16 @@ def main(adapter_address):
     hr_monitor.publish()
 
     import time
-    while True:
-        # Example: Send a heart rate value (format: [flags, value])
-        hr_monitor.notify_characteristic(srv_id=1, chr_id=1, value=[0x06, 0x45])  # 69 BPM
-        time.sleep(1)  # Send every second
-
+    try:
+        while True:
+            hr_monitor.update_characteristic_value(
+                srv_id=1,
+                chr_id=1,
+                value=[0x06, 0x45]  # Notify subscribers
+            )
+            time.sleep(1)  # Send every second
+    except KeyboardInterrupt:
+        hr_monitor.stop()
 
 if __name__ == '__main__':
     # Get the default adapter address and pass it to main
