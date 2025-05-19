@@ -200,12 +200,8 @@ def main(adapter_address):
     import time
     try:
         while True:
-            hr_monitor.update_characteristic_value(
-                srv_id=1,
-                chr_id=1,
-                value=[0x06, 0x45]  # Notify subscribers
-            )
-            time.sleep(1)  # Send every second
+            print("sanity check\n")
+            print(heartrate)
     except KeyboardInterrupt:
         hr_monitor.stop()
 
