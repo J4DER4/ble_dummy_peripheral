@@ -117,8 +117,10 @@ def update_value(characteristic):
     double_value = float(heartrate) + float(energy_expended) / 1000.0
     # Causes characteristic to be updated and send notification
     characteristic.set_value(struct.pack('<d', double_value))
+    # If still notifying, schedule the next update
+    if characteristic.is_notifying:
+        async_tools.add_timer_seconds(1, update_value, characteristic)
     # Return True to continue notifying. Return a False will stop notifications
-    # Getting the value from the characteristic of if it is notifying
     return characteristic.is_notifying
 
 
