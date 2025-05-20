@@ -71,7 +71,7 @@ def update_value_task(characteristic, force_update=False):
             
             # Add a tiny delay to allow any pending timers to be processed
             print("Scheduling delayed timer creation in 0.1 seconds")
-            async_tools.add_timer_seconds(0.1, schedule_next)
+            async_tools.add_timer_seconds(0.01, schedule_next)
         else:
             print("Characteristic is no longer notifying, stopping timer chain")
     finally:
