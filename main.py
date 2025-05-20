@@ -14,8 +14,8 @@ custom_service = '398629c8-4757-4e72-9b0d-8ebdd6ac82a2'
 custom_charasteristic = '094bd4ad-3605-4912-b9d3-a6b91c573137'
 
 heartrate = 60
-value_update_timer_id = None  # Global timer ID
-is_timer_running = False  # Flag to track timer state
+# Simple lock to prevent multiple timers
+timer_lock = False
 last_update_time = 0  # Track the last time an update was made
 
 
@@ -24,37 +24,39 @@ def update_value_task(characteristic):
     Called by the timer to update and send the characteristic value.
     Schedules the next update if notifications are still active.
     """
-    global heartrate, value_update_timer_id, is_timer_running, last_update_time
+    global heartrate, timer_lock, last_update_time
 
-    current_time = time.time()
-    print(f"[{current_time:.2f}] Updating value, time since last update: {current_time - last_update_time:.2f}s")
-    last_update_time = current_time
+    # If another timer is already running, exit immediately
+    # This handles race conditions with multiple timers
+    if timer_lock:
+        print("Timer already running, skipping this call")
+        return False
+
+    # Set lock to prevent other timers from running
+    timer_lock = True
     
-    heartrate += 1
-    if heartrate > 180:
-        heartrate = 60
-    print(f"Current value: {heartrate}")
-    
-    # Only send notification if the characteristic is actually still notifying
-    if characteristic.is_notifying:
-        characteristic.set_value(struct.pack('<d', float(heartrate)))
+    try:
+        current_time = time.time()
+        print(f"[{current_time:.2f}] Updating value, time since last update: {current_time - last_update_time:.2f}s")
+        last_update_time = current_time
         
-        # Cancel any existing timer before creating a new one
-        if value_update_timer_id is not None:
-            print(f"WARNING: Timer already exists with ID {value_update_timer_id}, removing it first")
-            try:
-                async_tools.remove_timer(value_update_timer_id)
-            except Exception as e:
-                print(f"Error removing timer: {e}")
+        heartrate += 1
+        if heartrate > 180:
+            heartrate = 60
+        print(f"Current value: {heartrate}")
         
-        # Schedule the next update with explicit timeout
-        is_timer_running = True
-        value_update_timer_id = async_tools.add_timer_seconds(5, update_value_task, characteristic)
-        print(f"Scheduled next update with timer ID {value_update_timer_id}")
-    else:
-        print("Characteristic is no longer notifying, stopping timer chain")
-        is_timer_running = False
-        value_update_timer_id = None
+        # Only send notification if the characteristic is actually still notifying
+        if characteristic.is_notifying:
+            characteristic.set_value(struct.pack('<d', float(heartrate)))
+            
+            # Schedule the next update with explicit timeout
+            print("Scheduling next update in 5 seconds")
+            async_tools.add_timer_seconds(5, update_value_task, characteristic)
+        else:
+            print("Characteristic is no longer notifying, stopping timer chain")
+    finally:
+        # Release lock after processing is complete
+        timer_lock = False
     
     return True
 
@@ -64,32 +66,23 @@ def notify_callback(notifying, characteristic):
     Called when a client subscribes or unsubscribes from notifications.
     Manages the lifecycle of the value update timer.
     """
-    global value_update_timer_id, is_timer_running, last_update_time
+    global timer_lock, last_update_time
 
     print(f"notify_callback called with notifying: {notifying}")
 
     if notifying:
         # Client subscribed - only start a timer if none is running
-        if not is_timer_running:
+        if not timer_lock:
             print("Starting value update timer chain.")
             # Mark the start time for timing calculations
             last_update_time = time.time()
             # Call task once to send immediate value and start the timer chain
             update_value_task(characteristic)
         else:
-            print(f"Value update timer chain already active (ID: {value_update_timer_id}).")
+            print("Value update timer already active.")
     else:
-        # Client unsubscribed
-        if value_update_timer_id is not None:
-            print(f"Stopping value update timer (ID: {value_update_timer_id}).")
-            try:
-                async_tools.remove_timer(value_update_timer_id)
-                is_timer_running = False
-                value_update_timer_id = None
-            except Exception as e:
-                print(f"Error removing timer: {e}")
-        else:
-            print("No active value update timer to stop.")
+        print("Client unsubscribed from notifications")
+        # The timer will stop automatically on next run because is_notifying will be False
     return True
 
 
