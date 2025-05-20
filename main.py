@@ -55,9 +55,9 @@ def update_value(characteristic):
         heartrate = 60
     # Causes characteristic to be updated and send notification
     characteristic.set_value(struct.pack('<d', float(heartrate)))
-    # If still notifying, schedule the next update
+    # If still notifying, schedule the next update after 2 seconds
     if characteristic.is_notifying:
-        async_tools.add_timer_seconds(1, update_value, characteristic)
+        async_tools.add_timer_seconds(2, update_value, characteristic)
     # Return True to continue notifying. Return a False will stop notifications
     return characteristic.is_notifying
 
@@ -74,7 +74,7 @@ def notify_callback(notifying, characteristic):
     print("notifications set")
 
     if notifying:
-        async_tools.add_timer_seconds(1, update_value, characteristic)
+        async_tools.add_timer_seconds(5, update_value, characteristic)
     return True
 
 
@@ -107,11 +107,8 @@ def main(adapter_address):
 
     # Start Bluezero async event loop
     event_loop = async_tools.EventLoop()
-    try:
-        event_loop.run()
-    except KeyboardInterrupt:
-        hr_monitor.stop()
-
+    event_loop.run()
+ 
 
 if __name__ == '__main__':
     # Get the default adapter address and pass it to main
