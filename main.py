@@ -19,17 +19,21 @@ timer_lock = False
 last_update_time = 0  # Track the last time an update was made
 
 
-def update_value_task(characteristic):
+def update_value_task(characteristic, force_update=False):
     """
     Called by the timer to update and send the characteristic value.
     Schedules the next update if notifications are still active.
+    
+    Args:
+        characteristic: The characteristic to update
+        force_update: If True, ignore rate limiting (used for initial updates)
     """
     global heartrate, timer_lock, last_update_time
 
     current_time = time.time()
     
-    # Rate limiting - if less than 4 seconds passed since last update, skip this call
-    if current_time - last_update_time < 4.0:
+    # Rate limiting - but allow force_update to override
+    if not force_update and current_time - last_update_time < 4.0:
         print(f"[{current_time:.2f}] Rate limiting: skipping update (only {current_time - last_update_time:.2f}s since last update)")
         return False
     
@@ -88,7 +92,8 @@ def notify_callback(notifying, characteristic):
             # Mark the start time for timing calculations
             last_update_time = time.time()
             # Call task once to send immediate value and start the timer chain
-            update_value_task(characteristic)
+            # Force the first update to happen regardless of timing
+            update_value_task(characteristic, force_update=True)
         else:
             print("Value update timer already active.")
     else:
