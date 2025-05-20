@@ -94,16 +94,13 @@ def main(adapter_address):
     # Add service
     hr_monitor.add_service(srv_id=1, uuid=custom_service, primary=True)
 
-    # Add characteristics
+    # Set initial value to 8 bytes, no read_callback, notifying False
     hr_monitor.add_characteristic(srv_id=1, chr_id=1, uuid=custom_charasteristic,
-                                  value=[], notifying=True,
-                                  # May not exactly match standard, but
-                                  # including read for tutorial
-                                  flags=['read', 'notify'],
-                                  read_callback=read_heartrate,
+                                  value=[0]*8, notifying=False,
+                                  flags=['notify'],
+                                  read_callback=None,
                                   write_callback=None,
-                                  notify_callback=notify_callback
-                                  )
+                                  notify_callback=notify_callback)
 
     # Publish peripheral
     hr_monitor.publish()
