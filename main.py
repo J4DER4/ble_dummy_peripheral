@@ -2,6 +2,7 @@
 # Standard modules
 import logging
 import struct
+import sys
 import time
 
 # Bluezero modules
@@ -17,6 +18,8 @@ heartrate = 60
 # Simple lock to prevent multiple timers
 timer_lock = False
 last_update_time = 0  # Track the last time an update was made
+# Default notification interval (seconds)
+notification_interval = 5
 
 
 def update_value_task(characteristic, force_update=False):
@@ -61,8 +64,8 @@ def update_value_task(characteristic, force_update=False):
             # Instead of scheduling next update immediately, 
             # schedule it with a single-shot function
             def schedule_next():
-                print("Delayed scheduling: Adding update in 5 seconds")
-                async_tools.add_timer_seconds(5, update_value_task, characteristic)
+                print(f"Delayed scheduling: Adding update in {notification_interval} seconds")
+                async_tools.add_timer_seconds(notification_interval, update_value_task, characteristic)
             
             # Add a tiny delay to allow any pending timers to be processed
             print("Scheduling delayed timer creation in 0.1 seconds")
@@ -102,12 +105,16 @@ def notify_callback(notifying, characteristic):
     return True
 
 
-def main(adapter_address):
+def main(adapter_address, interval=5):
     """
     Creates advertises and starts the peripheral
 
     :param adapter_address: the MAC address of the hardware adapter
+    :param interval: Notification interval in seconds (default: 5)
     """
+    global notification_interval
+    notification_interval = interval
+    
     logger = logging.getLogger('localGATT')
     logger.setLevel(logging.DEBUG)
 
@@ -135,5 +142,14 @@ def main(adapter_address):
 
 
 if __name__ == '__main__':
+    # Get command line argument for notification interval (default: 5 seconds)
+    interval = 5
+    if len(sys.argv) > 1:
+        try:
+            interval = int(sys.argv[1])
+            print(f"Setting notification interval to {interval} seconds")
+        except ValueError:
+            print(f"Invalid interval value '{sys.argv[1]}'. Using default: 5 seconds")
+    
     # Get the default adapter address and pass it to main
-    main(list(adapter.Adapter.available())[0].address)
+    main(list(adapter.Adapter.available())[0].address, interval)
