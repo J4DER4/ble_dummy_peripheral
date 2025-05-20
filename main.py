@@ -53,6 +53,7 @@ def update_value(characteristic):
     heartrate += 1
     if heartrate > 180:
         heartrate = 60
+    print(f"Current value: {heartrate}")
     # Causes characteristic to be updated and send notification
     characteristic.set_value(struct.pack('<d', float(heartrate)))
     # Only schedule the next update if still notifying
