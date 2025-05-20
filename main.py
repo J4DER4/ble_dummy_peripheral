@@ -11,72 +11,61 @@ from bluezero import peripheral
 
 custom_service = '398629c8-4757-4e72-9b0d-8ebdd6ac82a2'
 custom_charasteristic = '094bd4ad-3605-4912-b9d3-a6b91c573137'
-# Heartrate measurement and energy expended is persistent between function
-# reads
+
 heartrate = 60
+value_update_timer_id = None  # Global timer ID
 
 
-def read_heartrate():
+def update_value_task(characteristic):
     """
-    Generates new heartrate and energy expended measurements
-    Increments heartrate and energy_expended variables and serializes
-    them for BLE transport.
-    :return: bytes object for Heartrate Measurement Characteristic
+    Called by the timer to update and send the characteristic value.
+    Schedules the next update if notifications are still active.
     """
-    global heartrate
-    # Setup flags for what's supported by this example
-    # We are sending UINT8 formats, so don't indicate
-    # HEART_RATE_VALUE_FORMAT_UINT16
+    global heartrate, value_update_timer_id
 
-    # Increment heartrate by one each measurement cycle
-    heartrate = heartrate + 1
-    if heartrate > 180:
-        heartrate = 60
-
-    # Compose a double value for the payload (example: combine heartrate and energy_expended)
-    double_value = float(heartrate)
-    print(
-        f"Sending double payload: {double_value} (as 8 bytes)")
-    return struct.pack('<d', double_value)
-
-
-def update_value(characteristic):
-    """
-    Example of callback to send notifications
-
-    :param characteristic:
-    :return: boolean to indicate if timer should continue
-    """
-    global heartrate
-    # read/calculate new value
     print("updating value")
     heartrate += 1
     if heartrate > 180:
         heartrate = 60
     print(f"Current value: {heartrate}")
-    # Causes characteristic to be updated and send notification
     characteristic.set_value(struct.pack('<d', float(heartrate)))
-    # Only schedule the next update if still notifying
+
     if characteristic.is_notifying:
-        async_tools.add_timer_seconds(5, update_value, characteristic)
-    # Return True to continue notifying. Return a False will stop notifications
+        # Schedule the next call to this function
+        value_update_timer_id = async_tools.add_timer_seconds(5, update_value_task, characteristic)
+    else:
+        # Notifications stopped, ensure no timer is considered active
+        value_update_timer_id = None
+
+    # This return value is for some bluezero patterns, not strictly needed for a timer callback
     return characteristic.is_notifying
 
 
 def notify_callback(notifying, characteristic):
     """
-    Noitificaton callback example. In this case used to start a timer event
-    which calls the update callback every 2 seconds
-
-    :param notifying: boolean for start or stop of notifications
-    :param characteristic: The python object for this characteristic
+    Called when a client subscribes or unsubscribes from notifications.
+    Manages the lifecycle of the value update timer.
     """
-    print("hello from notify cb")
-    print("notifications set")
+    global value_update_timer_id
+
+    print(f"notify_callback called with notifying: {notifying}")
 
     if notifying:
-        # Only start the chain, do not schedule a timer here
-        update_value(characteristic)
+        # Client subscribed
+        if value_update_timer_id is None:
+            print("Starting value update timer chain.")
+            # Call task once to send immediate value and start the timer chain
+            update_value_task(characteristic)
+        else:
+            print("Value update timer chain already active.")
+    else:
+        # Client unsubscribed
+        if value_update_timer_id is not None:
+            print(f"Stopping value update timer (ID: {value_update_timer_id}).")
+            async_tools.remove_timer(value_update_timer_id)
+            value_update_timer_id = None
+        else:
+            print("No active value update timer to stop.")
     return True
 
 
@@ -100,7 +89,7 @@ def main(adapter_address):
     hr_monitor.add_characteristic(srv_id=1, chr_id=1, uuid=custom_charasteristic,
                                   value=[0]*8, notifying=False,
                                   flags=['notify'],
-                                  read_callback=None,
+                                  read_callback=None,  # No read_heartrate
                                   write_callback=None,
                                   notify_callback=notify_callback)
 
@@ -110,7 +99,7 @@ def main(adapter_address):
     # Start Bluezero async event loop
     event_loop = async_tools.EventLoop()
     event_loop.run()
- 
+
 
 if __name__ == '__main__':
     # Get the default adapter address and pass it to main
