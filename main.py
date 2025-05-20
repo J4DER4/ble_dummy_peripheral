@@ -201,15 +201,22 @@ def main(adapter_address):
                                   notify_callback=None
                                   ) """
 
-    # Publish peripheral and start event loop
+    # Publish peripheral
     hr_monitor.publish()
 
-    import time
+    # Function to print heart rate periodically
+    def print_heart_rate():
+        print("sanity check\n")
+        print(heartrate)
+        async_tools.add_timer_seconds(1, print_heart_rate)
+
+    # Start periodic print
+    async_tools.add_timer_seconds(1, print_heart_rate)
+
+    # Start Bluezero async event loop
+    event_loop = async_tools.EventLoop()
     try:
-        while True:
-            print("sanity check\n")
-            print(heartrate)
-            time.sleep(1)
+        event_loop.run()
     except KeyboardInterrupt:
         hr_monitor.stop()
 
