@@ -2,6 +2,7 @@
 # Standard modules
 import logging
 import struct
+import time
 
 # Bluezero modules
 from bluezero import async_tools
@@ -14,6 +15,8 @@ custom_charasteristic = '094bd4ad-3605-4912-b9d3-a6b91c573137'
 
 heartrate = 60
 value_update_timer_id = None  # Global timer ID
+is_timer_running = False  # Flag to track timer state
+last_update_time = 0  # Track the last time an update was made
 
 
 def update_value_task(characteristic):
@@ -21,24 +24,39 @@ def update_value_task(characteristic):
     Called by the timer to update and send the characteristic value.
     Schedules the next update if notifications are still active.
     """
-    global heartrate, value_update_timer_id
+    global heartrate, value_update_timer_id, is_timer_running, last_update_time
 
-    print("updating value")
+    current_time = time.time()
+    print(f"[{current_time:.2f}] Updating value, time since last update: {current_time - last_update_time:.2f}s")
+    last_update_time = current_time
+    
     heartrate += 1
     if heartrate > 180:
         heartrate = 60
     print(f"Current value: {heartrate}")
-    characteristic.set_value(struct.pack('<d', float(heartrate)))
-
+    
+    # Only send notification if the characteristic is actually still notifying
     if characteristic.is_notifying:
-        # Schedule the next call to this function
+        characteristic.set_value(struct.pack('<d', float(heartrate)))
+        
+        # Cancel any existing timer before creating a new one
+        if value_update_timer_id is not None:
+            print(f"WARNING: Timer already exists with ID {value_update_timer_id}, removing it first")
+            try:
+                async_tools.remove_timer(value_update_timer_id)
+            except Exception as e:
+                print(f"Error removing timer: {e}")
+        
+        # Schedule the next update with explicit timeout
+        is_timer_running = True
         value_update_timer_id = async_tools.add_timer_seconds(5, update_value_task, characteristic)
+        print(f"Scheduled next update with timer ID {value_update_timer_id}")
     else:
-        # Notifications stopped, ensure no timer is considered active
+        print("Characteristic is no longer notifying, stopping timer chain")
+        is_timer_running = False
         value_update_timer_id = None
-
-    # This return value is for some bluezero patterns, not strictly needed for a timer callback
-    return characteristic.is_notifying
+    
+    return True
 
 
 def notify_callback(notifying, characteristic):
@@ -46,24 +64,30 @@ def notify_callback(notifying, characteristic):
     Called when a client subscribes or unsubscribes from notifications.
     Manages the lifecycle of the value update timer.
     """
-    global value_update_timer_id
+    global value_update_timer_id, is_timer_running, last_update_time
 
     print(f"notify_callback called with notifying: {notifying}")
 
     if notifying:
-        # Client subscribed
-        if value_update_timer_id is None:
+        # Client subscribed - only start a timer if none is running
+        if not is_timer_running:
             print("Starting value update timer chain.")
+            # Mark the start time for timing calculations
+            last_update_time = time.time()
             # Call task once to send immediate value and start the timer chain
             update_value_task(characteristic)
         else:
-            print("Value update timer chain already active.")
+            print(f"Value update timer chain already active (ID: {value_update_timer_id}).")
     else:
         # Client unsubscribed
         if value_update_timer_id is not None:
             print(f"Stopping value update timer (ID: {value_update_timer_id}).")
-            async_tools.remove_timer(value_update_timer_id)
-            value_update_timer_id = None
+            try:
+                async_tools.remove_timer(value_update_timer_id)
+                is_timer_running = False
+                value_update_timer_id = None
+            except Exception as e:
+                print(f"Error removing timer: {e}")
         else:
             print("No active value update timer to stop.")
     return True
