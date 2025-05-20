@@ -19,7 +19,7 @@ heartrate = 60
 timer_lock = False
 last_update_time = 0  # Track the last time an update was made
 # Default notification interval (seconds)
-notification_interval = 5
+notification_interval = 0
 
 
 def update_value_task(characteristic, force_update=False):
@@ -105,7 +105,7 @@ def notify_callback(notifying, characteristic):
     return True
 
 
-def main(adapter_address, interval=5):
+def main(adapter_address, interval=0):
     """
     Creates advertises and starts the peripheral
 
@@ -143,13 +143,13 @@ def main(adapter_address, interval=5):
 
 if __name__ == '__main__':
     # Get command line argument for notification interval (default: 5 seconds)
-    interval = 5
+    interval = 0
     if len(sys.argv) > 1:
         try:
             interval = int(sys.argv[1])
             print(f"Setting notification interval to {interval} seconds")
         except ValueError:
-            print(f"Invalid interval value '{sys.argv[1]}'. Using default: 5 seconds")
+            print(f"Invalid interval value '{sys.argv[1]}'. Using default: {interval} seconds")
     
     # Get the default adapter address and pass it to main
     main(list(adapter.Adapter.available())[0].address, interval)
