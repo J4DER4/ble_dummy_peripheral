@@ -90,7 +90,7 @@ def main(adapter_address):
 
     # Create peripheral
     hr_monitor = peripheral.Peripheral(adapter_address,
-                                       local_name='superpaahdin3000',
+                                       local_name='airmodus',
                                        appearance=0x0905)
     # Add service
     hr_monitor.add_service(srv_id=1, uuid=custom_service, primary=True)
