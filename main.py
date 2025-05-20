@@ -38,7 +38,7 @@ def update_value_task(characteristic, force_update=False):
     # Rate limiting - but allow force_update to override
     # For very short intervals, use a smaller minimum time check (20% of the interval)
     interval_check = max(notification_interval * 0.2, 0.01)
-    if not force_update and current_time - last_update_time < interval_check:
+    if not force_update and (current_time - last_update_time + 0.01)< interval_check:
         print(f"[{current_time:.2f}] Rate limiting: skipping update (only {current_time - last_update_time:.2f}s since last update)")
         return False
     
