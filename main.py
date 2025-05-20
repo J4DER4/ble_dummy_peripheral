@@ -55,9 +55,9 @@ def update_value(characteristic):
         heartrate = 60
     # Causes characteristic to be updated and send notification
     characteristic.set_value(struct.pack('<d', float(heartrate)))
-    # If still notifying, schedule the next update after 2 seconds
+    # Only schedule the next update if still notifying
     if characteristic.is_notifying:
-        async_tools.add_timer_seconds(2, update_value, characteristic)
+        async_tools.add_timer_seconds(5, update_value, characteristic)
     # Return True to continue notifying. Return a False will stop notifications
     return characteristic.is_notifying
 
@@ -74,7 +74,8 @@ def notify_callback(notifying, characteristic):
     print("notifications set")
 
     if notifying:
-        async_tools.add_timer_seconds(5, update_value, characteristic)
+        # Only start the chain, do not schedule a timer here
+        update_value(characteristic)
     return True
 
 
