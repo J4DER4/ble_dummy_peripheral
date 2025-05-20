@@ -1,0 +1,31 @@
+static void uart_rx_task(void *pvParameters) {
+    char line_buf[UART_RX_BUFFER_SIZE];
+    uint16_t line_len = 0;
+    memset(line_buf, 0, sizeof(line_buf)); // Clear buffer
+
+    while (1) {
+        while (uart_rx_head != uart_rx_tail) {
+            uint8_t data = uart_rx_buffer[uart_rx_tail];
+            uart_rx_tail = (uart_rx_tail + 1) % UART_RX_BUFFER_SIZE;
+
+            // Debug: Print raw received byte
+            // printf("Raw: 0x%02X (%c)\n", data, (data >= 32 && data <= 126) ? data : '.');
+
+            if (data == '\r' || data == '\n') {
+                if (line_len > 0) {  // Only print if line not empty
+                    line_buf[line_len] = '\0';
+                    printf("UART Received: %s\n", line_buf);
+                    line_len = 0;
+                }
+            } else if (line_len < UART_RX_BUFFER_SIZE - 1) {
+                line_buf[line_len++] = data;
+            } else {
+                // Handle overflow (line too long)
+                line_buf[UART_RX_BUFFER_SIZE - 1] = '\0';
+                printf("UART Overflow: %s\n", line_buf);
+                line_len = 0;
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
