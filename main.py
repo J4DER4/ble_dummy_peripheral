@@ -26,8 +26,14 @@ def update_value_task(characteristic):
     """
     global heartrate, timer_lock, last_update_time
 
+    current_time = time.time()
+    
+    # Rate limiting - if less than 4 seconds passed since last update, skip this call
+    if current_time - last_update_time < 4.0:
+        print(f"[{current_time:.2f}] Rate limiting: skipping update (only {current_time - last_update_time:.2f}s since last update)")
+        return False
+    
     # If another timer is already running, exit immediately
-    # This handles race conditions with multiple timers
     if timer_lock:
         print("Timer already running, skipping this call")
         return False
@@ -36,7 +42,6 @@ def update_value_task(characteristic):
     timer_lock = True
     
     try:
-        current_time = time.time()
         print(f"[{current_time:.2f}] Updating value, time since last update: {current_time - last_update_time:.2f}s")
         last_update_time = current_time
         
@@ -49,9 +54,15 @@ def update_value_task(characteristic):
         if characteristic.is_notifying:
             characteristic.set_value(struct.pack('<d', float(heartrate)))
             
-            # Schedule the next update with explicit timeout
-            print("Scheduling next update in 5 seconds")
-            async_tools.add_timer_seconds(5, update_value_task, characteristic)
+            # Instead of scheduling next update immediately, 
+            # schedule it with a single-shot function
+            def schedule_next():
+                print("Delayed scheduling: Adding update in 5 seconds")
+                async_tools.add_timer_seconds(5, update_value_task, characteristic)
+            
+            # Add a tiny delay to allow any pending timers to be processed
+            print("Scheduling delayed timer creation in 0.1 seconds")
+            async_tools.add_timer_seconds(0.1, schedule_next)
         else:
             print("Characteristic is no longer notifying, stopping timer chain")
     finally:
