@@ -83,10 +83,11 @@ def read_heartrate():
     # Increment energy expended each measurement cycle
     energy_expended = energy_expended + 1
 
+    # Compose a double value for the payload (example: combine heartrate and energy_expended)
+    double_value = float(heartrate) + float(energy_expended) / 1000.0
     print(
-        f"Sending heartrate value of {heartrate} \
-        and energy expended of {energy_expended} kJ")
-    return struct.pack('<BBH', flags, heartrate, energy_expended)
+        f"Sending double payload: {double_value} (as 8 bytes)")
+    return struct.pack('<d', double_value)
 
 
 def read_sensor_location():
@@ -106,12 +107,16 @@ def update_value(characteristic):
     :param characteristic:
     :return: boolean to indicate if timer should continue
     """
+    global heartrate, energy_expended
     # read/calculate new value
     print("updating value")
-    new_value = heartrate + 1
-    heartrate = new_value
+    heartrate += 1
+    if heartrate > 180:
+        heartrate = 60
+    energy_expended += 1
+    double_value = float(heartrate) + float(energy_expended) / 1000.0
     # Causes characteristic to be updated and send notification
-    characteristic.set_value(new_value)
+    characteristic.set_value(struct.pack('<d', double_value))
     # Return True to continue notifying. Return a False will stop notifications
     # Getting the value from the characteristic of if it is notifying
     return characteristic.is_notifying
