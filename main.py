@@ -36,8 +36,8 @@ def update_value_task(characteristic, force_update=False):
     current_time = time.time()
     
     # Rate limiting - but allow force_update to override
-    #if interval-1 goes under 0 it will be set to 0
-    interval_check = max(notification_interval-1, 0.02)
+    # For very short intervals, use a smaller minimum time check (20% of the interval)
+    interval_check = max(notification_interval * 0.2, 0.01)
     if not force_update and current_time - last_update_time < interval_check:
         print(f"[{current_time:.2f}] Rate limiting: skipping update (only {current_time - last_update_time:.2f}s since last update)")
         return False
@@ -70,8 +70,10 @@ def update_value_task(characteristic, force_update=False):
                 async_tools.add_timer_seconds(notification_interval, update_value_task, characteristic)
             
             # Add a tiny delay to allow any pending timers to be processed
-            print("Scheduling delayed timer creation in 0.1 seconds")
-            async_tools.add_timer_seconds(0.01, schedule_next)
+            # Use a very short delay, just enough to break the execution chain
+            print("Scheduling delayed timer")
+            # Call directly without delay for faster operation
+            schedule_next()
         else:
             print("Characteristic is no longer notifying, stopping timer chain")
     finally:
